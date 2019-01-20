@@ -2,21 +2,36 @@
 
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
+NAME="classic-mac-cursors"
+THEME_DIR="$SCRIPTPATH/$NAME"
 
-echo "Building in $SCRIPTPATH..."
+rm -rf "$SCRIPTPATH/build"
+rm -rf "$THEME_DIR"
 
 mkdir -p "$SCRIPTPATH/build/16x16"
 mkdir -p "$SCRIPTPATH/build/32x32"
 mkdir -p "$SCRIPTPATH/build/64x64"
+mkdir -p "$THEME_DIR/cursors"
 
-for FILE in "$SCRIPTPATH"/*.cur; do
-	echo "Processing $FILE..."
-	F=$(basename "$FILE")
-	NAME=$(echo "$F" | sed 's/\.[^\.]*$//')
-	HOTSPOT=$(file "$FILE" | sed 's/.*hotspot @//')
-	echo "Hot Spot for $NAME is $HOTSPOT"
-	convert "$FILE" -crop 16x16+0+0 "$SCRIPTPATH/build/16x16/$NAME.png"
-	convert "$SCRIPTPATH/build/16x16/$NAME.png" -scale 32x32 "$SCRIPTPATH/build/32x32/$NAME.png"
-	convert "$SCRIPTPATH/build/16x16/$NAME.png" -scale 64x64 "$SCRIPTPATH/build/64x64/$NAME.png"
+ruby "$SCRIPTPATH/render-curs.rb" "$SCRIPTPATH/src/"*.rez
+
+for CUR in "$SCRIPTPATH/build"/*.config; do
+	BASENAME=$CUR
+	BASENAME=${BASENAME##*/}
+	BASENAME=${BASENAME%.*}
+
+	xcursorgen -p "$SCRIPTPATH/build" "$CUR" "$THEME_DIR/cursors/$BASENAME"
 done
 
+while read -r ALIAS ; do
+	FROM=${ALIAS% *}
+	TO=${ALIAS#* }
+
+	if [ -e "$THEME_DIR/cursors/$FROM" ]; then
+		continue
+	fi
+	echo "linking $FROM -> $TO"
+	ln -sf "$TO" "$THEME_DIR/cursors/$FROM"
+done < "$SCRIPTPATH/aliases"
+
+cp "$SCRIPTPATH/cursor.theme" "$THEME_DIR/"

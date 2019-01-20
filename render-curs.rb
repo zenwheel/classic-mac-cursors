@@ -2,22 +2,20 @@
 
 require 'pathname'
 
-# 1) find/generate file with 'CURS' resources (ResEdit)
-# 2) use MPW's DeRez to decompile the resources
-# 3) run this script on the DeRez output
+$build_path = "#{__dir__}/build"
 
 def render(name, data)
 	puts "Saving #{name}.png..."
-	x = 0
-	y = 0
+	hs_x = 0
+	hs_y = 0
 	mask = ''
 	data = data.strip.gsub(/[\s\$"]/, '') # clean up formatting
 	data = data.sub(/.{4}$/) { |m|
-		y = m.to_i(16)
+		hs_y = m.to_i(16)
 		''
 	}
 	data = data.sub(/.{4}$/) { |m|
-		x = m.to_i(16)
+		hs_x = m.to_i(16)
 		''
 	}
 	data = data.sub(/.{64}$/) { |m|
@@ -25,9 +23,7 @@ def render(name, data)
 		''
 	}
 
-	puts "Hotspot = #{x}, #{y}"
-	config = "16 #{x} #{y} #{name}.png"
-	File.open("cursors/#{name}.config", 'w') { |file| file.puts(config)  }
+	#puts "Hotspot = #{hs_x}, #{hs_y}"
 
 	bits = data.chars.map { |c| "%04b" % c.to_i(16) }
 	mask_bits = mask.chars.map { |c| "%04b" % c.to_i(16) }
@@ -63,14 +59,29 @@ def render(name, data)
 	command += " -fill black"
 	command += blacks
 
-	command += " \"cursors/#{name}.png\""
+	command += " \"#{$build_path}/16x16/#{name}.png\""
 	system command
+
+	command = "convert \"#{$build_path}/16x16/#{name}.png\" -scale 32x32 \"#{$build_path}/32x32/#{name}.png\""
+	system command
+
+	command = "convert \"#{$build_path}/16x16/#{name}.png\" -scale 64x64 \"#{$build_path}/64x64/#{name}.png\""
+	system command
+
+	delay = ''
+	delay = ' 30' if name =~ /-\d{2}$/
+	config = "16 #{hs_x} #{hs_y} 16x16/#{name}.png#{delay}\n"
+	config += "32 #{hs_x * 2} #{hs_y * 2} 32x32/#{name}.png#{delay}\n"
+	config += "64 #{hs_x * 4} #{hs_y * 4} 64x64/#{name}.png#{delay}\n"
+	File.open("#{$build_path}/#{name.sub /-\d{2}$/, ''}.config", 'a') { |file| file.puts(config)  }
 end
 
 def convert(file)
 	return if !File.exist?(file)
 	puts "Loading #{file}..."
-	Pathname.new("cursors").mkpath
+	Pathname.new("#{$build_path}/16x16").mkpath
+	Pathname.new("#{$build_path}/32x32").mkpath
+	Pathname.new("#{$build_path}/64x64").mkpath
 
 	content = File.read(file)
 	content = content.encode('UTF-8', 'UTF-8', :invalid => :replace) # fix old mac encoding
