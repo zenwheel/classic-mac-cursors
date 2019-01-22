@@ -4,6 +4,7 @@ SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
 NAME="classic-mac-cursors"
 THEME_DIR="$SCRIPTPATH/$NAME"
+THEME_ARCHIVE="$SCRIPTPATH/$NAME.tar.gz"
 
 rm -rf "$SCRIPTPATH/build"
 rm -rf "$THEME_DIR"
@@ -31,7 +32,8 @@ while read -r ALIAS ; do
 		continue
 	fi
 	echo "linking $FROM -> $TO"
-	ln -sf "$TO" "$THEME_DIR/cursors/$FROM"
+	(cd "$THEME_DIR/cursors"; ln -sf "$TO" "$FROM")
 done < "$SCRIPTPATH/aliases"
 
 cp "$SCRIPTPATH/cursor.theme" "$THEME_DIR/"
+(cd "$SCRIPTPATH"; tar czvf "$THEME_ARCHIVE" "$NAME")
