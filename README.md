@@ -8,6 +8,6 @@ Requirements: ImageMagick, x11-apps, ruby, xcursorgen
 Examples:
 
 ![default](examples/default.png)
-![default](examples/progress-01.png)
-![default](examples/wait-01.png)
+![progress](examples/progress-01.png)
+![wait](examples/wait-01.png)
 
